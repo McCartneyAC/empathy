@@ -86,3 +86,29 @@ analytic_data %>%
   ggplot2::theme_light()+
   ggplot2::theme(text = ggplot2::element_text(family = "Times New Roman")) 
 
+
+# Secondary Analysis ------------------------------------------------------
+
+df_unnested %>% 
+  inner_join(empathy, by = "word") %>% 
+  arrange(desc(rating)) %>% 
+  distinct(word,rating) %>% 
+  head(10) %>%
+  dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
+  select(word, rating) %>% 
+  gt() %>% 
+  tab_header(
+    title = "Top Ten most `empathetic` words in data"
+  )
+  
+df_unnested %>% 
+  inner_join(empathy, by = "word") %>% 
+  arrange((rating)) %>% 
+  distinct(word,rating) %>% 
+  head(10) %>%
+  dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
+  select(word, rating) %>% 
+  gt() %>% 
+  tab_header(
+    title = "Top Ten least `empathetic` words in data"
+  )
