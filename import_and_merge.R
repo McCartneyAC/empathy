@@ -32,14 +32,14 @@ library(GGally)
 setwd("C:\\Users\\Andrew\\Desktop\\Statistics and Data Analysis\\empathy\\")
 
 # import empathy word loadings
-empathy <- read_csv("empathy_lexicon.csv")
+empathy <- read_csv("https://raw.githubusercontent.com/McCartneyAC/empathy/main/empathy_lexicon.csv")
 empathy
 
 # import distress
-distress <-read_csv("distress_lexicon.csv")
+distress <-read_csv("https://raw.githubusercontent.com/McCartneyAC/empathy/main/distress_lexicon.csv")
 distress
 # import affect
-affect <- read_csv("Affect_and_intensity.csv")
+affect <- read_csv("https://raw.githubusercontent.com/McCartneyAC/empathy/main/Affect_and_intensity.csv")
 affect %>% 
   filter(term == "harry potter")
 
