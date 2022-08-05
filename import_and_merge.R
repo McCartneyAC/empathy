@@ -59,7 +59,7 @@ affect %>%
 
 
 # import the text data as one unit
-df <- readxl::read_xlsx("C:\\Users\\Andrew\\Desktop\\Statistics and Data Analysis\\empathy\\Dummy_data.xlsx")
+df <- readxl::read_xlsx("Dummy_data.xlsx")
 df <- df %>% 
   dplyr::select(-`...4`)
 df
