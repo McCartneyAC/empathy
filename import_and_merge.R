@@ -6,6 +6,7 @@
 # for Rose. Start date 8/2/2022
 
 # updated: 8/5/2022
+# updated 1/31/2023
 
 #initial business:
 library(dplyr)
@@ -15,7 +16,7 @@ library(tidytext)
 library(sjPlot)
 library(gt)
 library(ggplot2)
-install.packages("GGally")
+#install.packages("GGally")
 library(GGally)
 
 ## ROSE  IF ANY OF THESE THROW AN ERROR RUN THIS CODE: 
@@ -27,6 +28,12 @@ library(GGally)
 # install.packages("sjPlot")
 # install.packages("gt")
 # install.packages("ggplot2")
+
+
+`%notin%` <- function(x, y) {
+  !(x %in% y)
+}
+
 # import and tidy ---------------------------------------------------------
 
 setwd("C:\\Users\\Andrew\\Desktop\\Statistics and Data Analysis\\empathy\\")
@@ -42,6 +49,7 @@ distress
 affect <- read_csv("https://raw.githubusercontent.com/McCartneyAC/empathy/main/Affect_and_intensity.csv")
 affect %>% 
   filter(term == "harry potter")
+afinn<-get_sentiments("afinn")
 
 # step 1 split / widen affect and intensity
 # step 2 full join on term / word
@@ -54,9 +62,10 @@ affect %>%
   full_join(empathy) %>% 
   rename(empathy = rating, 
          affect = AFFECT_AVG, 
-         intensity = INTENSITY_AVG) -> dictionary
-
-
+         intensity = INTENSITY_AVG) %>% 
+  full_join(afinn) %>% 
+  rename(sentiment = value)-> 
+  dictionary
 
 # import the text data as one unit
 df <- readxl::read_xlsx("Dummy_data.xlsx")
@@ -64,10 +73,15 @@ df <- df %>%
   dplyr::select(-`...4`)
 df
 
+
+
 # tokenize df
 
 df_unnested <- df  %>% 
-  unnest_tokens(word, Text)
+  unnest_tokens(word, Text) %>% 
+  # remove stops at the start. 
+  anti_join(stop_words) %>% 
+  filter(word %notin% c("Katie", "katie"))
 
 df_unnested %>% 
   inner_join(dictionary)  %>% 
@@ -76,8 +90,10 @@ df_unnested %>%
             mean_intensity = mean(intensity, na.rm = T),
             mean_empathy = mean(empathy, na.rm = T),
             mean_distress = mean(distress, na.rm = T),
+            mean_sentiment = mean(sentiment, na.rm = T),
             score = mean(`Primary coder score`, na.rm = T))->
   analytic_data
+
 
 
 analytic_data
@@ -101,7 +117,7 @@ analytic_data %>%
   )
 
 # what's the correlation? 
-cor(analytic_data$score, analytic_data$mean_rating)
+#cor(analytic_data$score, analytic_data$mean_rating)
 
 
 analytic_data %>%
@@ -111,9 +127,11 @@ analytic_data %>%
 # regression
 
 analytic_data %>% 
-  lm(score ~ mean_affect + mean_intensity + mean_empathy+mean_distress, data = .) %>% 
+  lm(score ~ mean_affect + mean_intensity + mean_sentiment + mean_empathy+mean_distress, data = .) %>% 
   sjPlot::tab_model()
-
+analytic_data %>% 
+  lm(score ~ mean_sentiment, data = .) %>% 
+  sjPlot::tab_model()
 # plot: 
 # analytic_data %>% 
 #   ggplot(aes(x = mean_rating, y = score)) +
@@ -130,47 +148,47 @@ analytic_data %>%
 # top 20 broken code (ignore) ---------------------------------------------
 
  
-topten <- function(feeling, top) {
- df <-  df_unnested %>% 
-   inner_join(dictionary)  
-   if (top == TRUE) {
-     df %>% 
-      arrange(desc(.$feeling)) %>% 
-     distinct(word,.$feeling) %>%
-       head(10) %>%
-       dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
-       gt() %>% 
-       tab_header(
-         title = paste0("Top Ten most", deparse(substitute(feeling)),  "words in data")
-       )
-  } else {
-    df %>% 
-      arrange((.$feeling)) %>% 
-      distinct(word,.$feeling) %>%
-      head(10) %>%
-      dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
-      gt() %>% 
-      tab_header(
-        title = paste0("Top Ten least", deparse(substitute(feeling)),  "words in data")
-      )
-  }
-
-}
-topten(feeling = "distress", TRUE)
-df_unnested %>% 
-  inner_join(dictionary) %>% 
-  arrange(desc(.$distress)) %>% 
-  distinct(word,.$distress) %>% 
-  head(10) %>%
-  dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>% 
-  gt() %>%  
-  tab_header(
-    title = paste0("Top Ten most", names()[2],  "words in data")
-  )
-distress
-df_unnested %>% 
-  inner_join(dictionary)
-
+# topten <- function(feeling, top) {
+#  df <-  df_unnested %>% 
+#    inner_join(dictionary)  
+#    if (top == TRUE) {
+#      df %>% 
+#       arrange(desc(.$feeling)) %>% 
+#      distinct(word,.$feeling) %>%
+#        head(10) %>%
+#        dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
+#        gt() %>% 
+#        tab_header(
+#          title = paste0("Top Ten most", deparse(substitute(feeling)),  "words in data")
+#        )
+#   } else {
+#     df %>% 
+#       arrange((.$feeling)) %>% 
+#       distinct(word,.$feeling) %>%
+#       head(10) %>%
+#       dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
+#       gt() %>% 
+#       tab_header(
+#         title = paste0("Top Ten least", deparse(substitute(feeling)),  "words in data")
+#       )
+#   }
+# 
+# }
+# topten(feeling = "distress", TRUE)
+# df_unnested %>% 
+#   inner_join(dictionary) %>% 
+#   arrange(desc(.$distress)) %>% 
+#   distinct(word,.$distress) %>% 
+#   head(10) %>%
+#   dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>% 
+#   gt() %>%  
+#   tab_header(
+#     title = paste0("Top Ten most", names()[2],  "words in data")
+#   )
+# distress
+# df_unnested %>% 
+#   inner_join(dictionary)
+# 
 
 
 # actual top 20s ----------------------------------------------------------
@@ -178,6 +196,7 @@ df_unnested %>%
 # distress
 
  df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
     arrange(desc(distress)) %>% 
     distinct(word,distress) %>%
@@ -188,6 +207,7 @@ df_unnested %>%
       title = paste0("Top Ten most `distress` words in data")
     )
 df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange((distress)) %>% 
   distinct(word,distress) %>%
@@ -200,6 +220,7 @@ df_unnested %>%
 
 # empathy
 df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange(desc(empathy)) %>% 
   distinct(word,empathy) %>%
@@ -210,6 +231,7 @@ df_unnested %>%
     title = paste0("Top Ten most `empathy` words in data")
   )
 df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange((empathy)) %>% 
   distinct(word,empathy) %>%
@@ -221,6 +243,7 @@ df_unnested %>%
   )
 # affect 
 df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange(desc(affect)) %>% 
   distinct(word,affect) %>%
@@ -230,7 +253,8 @@ df_unnested %>%
   tab_header(
     title = paste0("Top Ten most `affect` words in data")
   )
-df_unnested %>% 
+df_unnested %>%
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange((affect)) %>% 
   distinct(word,affect) %>%
@@ -243,6 +267,7 @@ df_unnested %>%
 
 # intensity
 df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange(desc(intensity)) %>% 
   distinct(word,intensity) %>%
@@ -253,6 +278,7 @@ df_unnested %>%
     title = paste0("Top Ten most `intensity` words in data")
   )
 df_unnested %>% 
+  anti_join(stop_words) %>%
   inner_join(dictionary)  %>% 
   arrange((intensity)) %>% 
   distinct(word,intensity) %>%
@@ -261,4 +287,67 @@ df_unnested %>%
   gt() %>% 
   tab_header(
     title = paste0("Top Ten least `intensity` words in data")
+  )
+
+# Sentiment
+
+df_unnested %>% 
+  inner_join(dictionary)  %>% 
+  arrange(desc(sentiment)) %>% 
+  distinct(word,sentiment) %>%
+  head(20) %>%
+  dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
+  gt() %>% 
+  tab_header(
+    title = paste0("Top Ten most `sentiment` words in data")
+  )
+df_unnested %>% 
+  inner_join(dictionary)  %>% 
+  arrange((sentiment)) %>% 
+  distinct(word,sentiment) %>%
+  head(20) %>%
+  dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
+  gt() %>% 
+  tab_header(
+    title = paste0("Top Ten least `sentiment` words in data")
+  )
+
+
+# most common words in things scored ... x --------------------------------
+
+
+df_unnested %>% 
+  anti_join(stop_words) %>%
+  group_by(`Primary coder score`, word) %>% 
+  count() %>% 
+  ungroup() %>% 
+  group_by(`Primary coder score`) %>% 
+  arrange(desc(`Primary coder score`)) %>% 
+  arrange(desc(n)) %>% 
+  ungroup()->
+  word_counts
+word_counts %>% 
+  filter(`Primary coder score` == 3) %>% 
+  filter(!is.na(word)) %>% 
+  head(10)%>% 
+  select(word)  %>% 
+  rename(top_3 = word)-> top_ten_3
+word_counts %>% 
+  filter(`Primary coder score` == 2) %>% 
+  filter(!is.na(word)) %>% 
+  head(10) %>% 
+  select(word)%>% 
+  rename(top_2 = word) -> top_ten_2
+word_counts %>% 
+  filter(`Primary coder score` == 1) %>% 
+  filter(!is.na(word)) %>% 
+  head(10) %>% 
+  select(word) %>% 
+  rename(top_1 = word) -> top_ten_1
+top_ten_1
+toptens <- tibble(top_ten_3, top_ten_2, top_ten_1)
+toptens %>% 
+  gt() %>% 
+  tab_header(
+    title = paste0("Most common words by coder rating")
   )
