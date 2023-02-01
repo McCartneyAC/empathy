@@ -16,7 +16,6 @@ library(tidytext)
 library(sjPlot)
 library(gt)
 library(ggplot2)
-#install.packages("GGally")
 library(GGally)
 
 ## ROSE  IF ANY OF THESE THROW AN ERROR RUN THIS CODE: 
@@ -28,7 +27,7 @@ library(GGally)
 # install.packages("sjPlot")
 # install.packages("gt")
 # install.packages("ggplot2")
-
+#install.packages("GGally")
 
 `%notin%` <- function(x, y) {
   !(x %in% y)
@@ -49,6 +48,7 @@ distress
 affect <- read_csv("https://raw.githubusercontent.com/McCartneyAC/empathy/main/Affect_and_intensity.csv")
 affect %>% 
   filter(term == "harry potter")
+#import sentiments (afinn library)
 afinn<-get_sentiments("afinn")
 
 # step 1 split / widen affect and intensity
@@ -69,8 +69,8 @@ affect %>%
 
 # import the text data as one unit
 df <- readxl::read_xlsx("Dummy_data.xlsx")
-df <- df %>% 
-  dplyr::select(-`...4`)
+# df <- df %>% 
+#   dplyr::select(-`...4`)
 df
 
 
@@ -116,10 +116,6 @@ analytic_data %>%
     title = paste0("Data Description")
   )
 
-# what's the correlation? 
-#cor(analytic_data$score, analytic_data$mean_rating)
-
-
 analytic_data %>%
   select(-`Participant ID`) %>% 
   ggpairs()
@@ -145,50 +141,7 @@ analytic_data %>%
 # Secondary Analysis ------------------------------------------------------
 
 
-# top 20 broken code (ignore) ---------------------------------------------
 
- 
-# topten <- function(feeling, top) {
-#  df <-  df_unnested %>% 
-#    inner_join(dictionary)  
-#    if (top == TRUE) {
-#      df %>% 
-#       arrange(desc(.$feeling)) %>% 
-#      distinct(word,.$feeling) %>%
-#        head(10) %>%
-#        dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
-#        gt() %>% 
-#        tab_header(
-#          title = paste0("Top Ten most", deparse(substitute(feeling)),  "words in data")
-#        )
-#   } else {
-#     df %>% 
-#       arrange((.$feeling)) %>% 
-#       distinct(word,.$feeling) %>%
-#       head(10) %>%
-#       dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>%
-#       gt() %>% 
-#       tab_header(
-#         title = paste0("Top Ten least", deparse(substitute(feeling)),  "words in data")
-#       )
-#   }
-# 
-# }
-# topten(feeling = "distress", TRUE)
-# df_unnested %>% 
-#   inner_join(dictionary) %>% 
-#   arrange(desc(.$distress)) %>% 
-#   distinct(word,.$distress) %>% 
-#   head(10) %>%
-#   dplyr::mutate(dplyr::across(is.numeric, round, 2)) %>% 
-#   gt() %>%  
-#   tab_header(
-#     title = paste0("Top Ten most", names()[2],  "words in data")
-#   )
-# distress
-# df_unnested %>% 
-#   inner_join(dictionary)
-# 
 
 
 # actual top 20s ----------------------------------------------------------
@@ -317,7 +270,7 @@ df_unnested %>%
 
 
 df_unnested %>% 
-  anti_join(stop_words) %>%
+  anti_join(stop_words) %>% #now unnecessary
   group_by(`Primary coder score`, word) %>% 
   count() %>% 
   ungroup() %>% 
