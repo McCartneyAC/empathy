@@ -17,9 +17,9 @@ library(sjPlot)
 library(gt)
 library(ggplot2)
 library(GGally)
-
+library(SnowballC)
 ## ROSE  IF ANY OF THESE THROW AN ERROR RUN THIS CODE: 
-# 
+install.packages("SnowballC")
 # install.packages("dplyr")
 # install.packages("readr")
 # install.packages("readxl")
@@ -67,6 +67,9 @@ affect %>%
   rename(sentiment = value)-> 
   dictionary
 
+dictionary
+
+
 # import the text data as one unit
 df <- readxl::read_xlsx("Dummy_data.xlsx")
 # df <- df %>% 
@@ -81,7 +84,8 @@ df_unnested <- df  %>%
   unnest_tokens(word, Text) %>% 
   # remove stops at the start. 
   anti_join(stop_words) %>% 
-  filter(word %notin% c("Katie", "katie"))
+  filter(word %notin% c("Katie", "katie", "gotta", "cuz", "kinda"))
+
 
 df_unnested %>% 
   inner_join(dictionary)  %>% 
@@ -304,3 +308,36 @@ toptens %>%
   tab_header(
     title = paste0("Most common words by coder rating")
   )
+
+
+# stems for empathy  ------------------------------------------------------
+install.packages("SnowballC"); library(SnowballC)
+
+stem_df_unnested <-df_unnested%>% 
+  filter(!is.na(word)) %>% 
+  mutate(word = wordStem(word)) %>% 
+  inner_join(dictionary) 
+
+stem_dictionary<-dictionary %>% 
+  mutate(word = wordStem(word)) %>% 
+  distinct(word, .keep_all = TRUE)
+
+stem_df_unnested %>% 
+  inner_join(stem_dictionary)  %>% 
+  group_by(`Participant ID`) %>% 
+  summarize(mean_affect = mean(affect, na.rm = T), 
+            mean_intensity = mean(intensity, na.rm = T),
+            mean_empathy = mean(empathy, na.rm = T),
+            mean_distress = mean(distress, na.rm = T),
+            mean_sentiment = mean(sentiment, na.rm = T),
+            score = mean(`Primary coder score`, na.rm = T))->
+  stem_analytic_data
+
+
+
+stem_analytic_data
+
+
+stem_analytic_data %>% 
+  lm(score ~ mean_empathy, data = .) %>% 
+  sjPlot::tab_model()
